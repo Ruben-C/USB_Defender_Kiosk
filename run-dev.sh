@@ -11,6 +11,10 @@ echo "USB Defender Kiosk - Development Mode"
 echo "======================================"
 echo ""
 
+# Check Python version
+PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '(?<=Python )\d+\.\d+')
+echo "Python version: $PYTHON_VERSION"
+
 # Check if virtual environment exists
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."

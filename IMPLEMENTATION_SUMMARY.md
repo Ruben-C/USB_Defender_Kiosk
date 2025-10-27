@@ -7,7 +7,7 @@ The USB Defender Kiosk application has been fully implemented according to speci
 ## Architecture
 
 **Technology Stack:**
-- Python 3.11+ with PyQt6 for GUI
+- Python 3.8+ with PyQt6 for GUI
 - ClamAV for antivirus scanning
 - LibreOffice (headless) for document conversion
 - ImageMagick for PDF to image conversion

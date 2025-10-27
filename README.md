@@ -25,10 +25,10 @@ USB Defender Kiosk provides a simple, user-friendly interface for non-technical 
 
 ## Requirements
 
-- Ubuntu Desktop 22.04 LTS or newer (fresh installation recommended)
+- Ubuntu Desktop 20.04 LTS or newer (fresh installation recommended)
 - Minimum 4GB RAM
 - 20GB free disk space
-- Python 3.11 or newer
+- Python 3.8 or newer (automatically detected)
 - Internet connection for initial setup and ClamAV updates
 
 ## Installation

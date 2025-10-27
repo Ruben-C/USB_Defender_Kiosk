@@ -282,10 +282,10 @@ A: Stop service, remove kiosk user, delete `/opt/usb-defender-kiosk/` and `/etc/
 
 ## Version Information
 
-- Version: 1.0.0
-- Python: 3.11+
-- Platform: Ubuntu Desktop 22.04 LTS+
-- License: [Specify your license]
+- Version: 1.1.0
+- Python: 3.8+ (automatically detected during installation)
+- Platform: Ubuntu Desktop 20.04 LTS or newer
+- License: MIT License
 
 ## Getting Help
 

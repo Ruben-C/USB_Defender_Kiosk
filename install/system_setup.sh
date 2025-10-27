@@ -22,10 +22,16 @@ apt-get upgrade -y
 
 # Install system dependencies
 echo "[2/10] Installing system dependencies..."
+
+# Detect Python version
+PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '(?<=Python )\d+\.\d+')
+echo "Detected Python version: $PYTHON_VERSION"
+
 apt-get install -y \
-    python3.11 \
+    python3 \
     python3-pip \
     python3-venv \
+    python3-dev \
     clamav \
     clamav-daemon \
     clamav-freshclam \
@@ -40,7 +46,8 @@ apt-get install -y \
     libmagic-dev \
     samba-common \
     cifs-utils \
-    dbus-x11
+    dbus-x11 \
+    build-essential
 
 # Stop ClamAV services for configuration
 echo "[3/10] Configuring ClamAV..."

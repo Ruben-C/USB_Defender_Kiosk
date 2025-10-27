@@ -1,0 +1,27 @@
+[Unit]
+Description=USB Defender Kiosk Application
+After=graphical.target network.target
+Wants=clamav-daemon.service udisks2.service
+After=clamav-daemon.service udisks2.service
+
+[Service]
+Type=simple
+User=usb-kiosk
+Group=usb-kiosk
+WorkingDirectory=/opt/usb-defender-kiosk
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/usb-kiosk/.Xauthority"
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+ExecStart=/opt/usb-defender-kiosk/venv/bin/python /opt/usb-defender-kiosk/src/main.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=graphical.target
+

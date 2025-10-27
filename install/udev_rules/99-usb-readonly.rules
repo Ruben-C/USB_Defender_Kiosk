@@ -1,0 +1,14 @@
+# USB Defender Kiosk - USB Read-Only Rules
+# This file forces all USB storage devices to mount as read-only and without execution permissions
+
+# Match all USB storage devices
+SUBSYSTEM=="block", SUBSYSTEMS=="usb", ENV{DEVTYPE}=="partition", ENV{UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro,noexec,nodev,nosuid"
+SUBSYSTEM=="block", SUBSYSTEMS=="usb", ENV{DEVTYPE}=="disk", ENV{UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro,noexec,nodev,nosuid"
+
+# Set read-only flag for USB block devices
+SUBSYSTEM=="block", SUBSYSTEMS=="usb", ATTR{ro}="1"
+
+# Tag USB devices for our application
+SUBSYSTEM=="block", SUBSYSTEMS=="usb", ENV{DEVTYPE}=="partition", TAG+="usb-defender"
+SUBSYSTEM=="block", SUBSYSTEMS=="usb", ENV{DEVTYPE}=="disk", TAG+="usb-defender"
+

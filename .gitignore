@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyQt
+*.ui~
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application specific
+/var/usb-defender/
+/var/log/usb-defender/
+*.bak
+*.tmp
+
+# Configuration (keep template)
+/etc/usb-defender/
+
+# Temporary files
+temp/
+tmp/
+

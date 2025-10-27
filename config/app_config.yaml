@@ -1,0 +1,185 @@
+# USB Defender Kiosk Configuration
+
+# Transfer method configuration
+transfer:
+  # Method: local, network, cloud, or secure_usb (airgapped)
+  method: secure_usb
+  
+  # Local filesystem transfer
+  local:
+    output_directory: /var/usb-defender/transfers
+    create_session_folders: true
+    session_folder_format: "%Y%m%d_%H%M%S"
+  
+  # Network share transfer (SMB/CIFS)
+  network:
+    enabled: false
+    server: "//server.local/share"
+    share_path: "usb-transfers"
+    username: "transfer_user"
+    password: ""  # Will be encrypted after first run
+    domain: "WORKGROUP"
+    timeout: 30
+  
+  # Cloud storage transfer (S3-compatible)
+  cloud:
+    enabled: false
+    type: s3
+    endpoint: "https://s3.amazonaws.com"
+    bucket: "usb-transfers"
+    region: "us-east-1"
+    access_key: ""
+    secret_key: ""
+    prefix: "transfers/"
+  
+  # Secure USB transfer (airgapped mode)
+  secure_usb:
+    database_path: "/etc/usb-defender/secure_usb.db"
+    create_session_folders: true
+    session_folder_format: "%Y%m%d_%H%M%S"
+
+# File processing settings
+files:
+  # Maximum file size in MB
+  max_size_mb: 100
+  
+  # Maximum total transfer size in MB
+  max_total_size_mb: 500
+  
+  # Allowed file extensions
+  allowed_extensions:
+    - pdf
+    - doc
+    - docx
+    - xls
+    - xlsx
+    - ppt
+    - pptx
+    - odt
+    - ods
+    - odp
+    - jpg
+    - jpeg
+    - png
+    - gif
+    - bmp
+    - tiff
+    - txt
+    - rtf
+  
+  # Block these extensions explicitly
+  blocked_extensions:
+    - exe
+    - bat
+    - cmd
+    - sh
+    - ps1
+    - vbs
+    - js
+    - jar
+    - msi
+    - scr
+    - com
+    - pif
+
+# Document to image conversion settings
+conversion:
+  # Output format: png or jpeg
+  output_format: png
+  
+  # Image quality for JPEG (1-100)
+  jpeg_quality: 95
+  
+  # PNG compression (0-9)
+  png_compression: 6
+  
+  # DPI for document conversion
+  dpi: 150
+  
+  # Maximum image dimension (width or height)
+  max_dimension: 2400
+  
+  # Create manifest file
+  create_manifest: true
+
+# ClamAV antivirus settings
+clamav:
+  # ClamAV socket path
+  socket: /var/run/clamav/clamd.ctl
+  
+  # Scan timeout in seconds
+  timeout: 300
+  
+  # Update signatures on startup
+  update_on_startup: true
+  
+  # Action for infected files: skip or report
+  infected_action: skip
+
+# UI settings
+ui:
+  # Theme: light or dark
+  theme: light
+  
+  # Font size multiplier for accessibility
+  font_scale: 1.2
+  
+  # Show file previews
+  show_previews: true
+  
+  # Language (for future localization)
+  language: en
+
+# Logging settings
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  level: INFO
+  
+  # Log directory
+  directory: /var/log/usb-defender
+  
+  # Maximum log file size in MB
+  max_size_mb: 10
+  
+  # Number of backup files to keep
+  backup_count: 5
+  
+  # Log to console (for debugging)
+  console: false
+
+# Dashboard settings
+dashboard:
+  # Admin password (will be hashed after first run)
+  password: "admin"
+  
+  # Session timeout in minutes
+  session_timeout: 15
+  
+  # Show system stats
+  show_stats: true
+
+# Kiosk mode settings
+kiosk:
+  # Enable full-screen mode
+  fullscreen: true
+  
+  # Disable keyboard shortcuts
+  disable_shortcuts: true
+  
+  # Show exit button (requires password)
+  show_exit: false
+  
+  # Auto-return to home screen after inactivity (seconds)
+  inactivity_timeout: 120
+
+# USB mount settings
+usb:
+  # Mount point base directory
+  mount_base: /media/usb-defender
+  
+  # Auto-unmount after transfer
+  auto_unmount: true
+  
+  # Unmount timeout after completion (seconds)
+  unmount_timeout: 5
+

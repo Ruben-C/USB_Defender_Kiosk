@@ -26,28 +26,82 @@ echo "[2/10] Installing system dependencies..."
 # Detect Python version
 PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '(?<=Python )\d+\.\d+')
 echo "Detected Python version: $PYTHON_VERSION"
+echo ""
 
-apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-venv \
-    python3-dev \
-    clamav \
-    clamav-daemon \
-    clamav-freshclam \
-    libreoffice \
-    libreoffice-writer \
-    libreoffice-calc \
-    libreoffice-impress \
-    imagemagick \
-    udev \
-    udisks2 \
-    libmagic1 \
-    libmagic-dev \
-    samba-common \
-    cifs-utils \
-    dbus-x11 \
-    build-essential
+# Function to check if a package is installed
+check_package() {
+    local package=$1
+    if dpkg -l | grep -q "^ii  $package "; then
+        echo "  ✓ $package - already installed"
+        return 0
+    else
+        echo "  ⊗ $package - not installed, will install"
+        return 1
+    fi
+}
+
+# Function to install a package if not already installed
+install_if_needed() {
+    local package=$1
+    if ! dpkg -l | grep -q "^ii  $package "; then
+        echo "  → Installing $package..."
+        apt-get install -y $package
+        if [ $? -eq 0 ]; then
+            echo "  ✓ $package installed successfully"
+        else
+            echo "  ✗ $package installation failed"
+            return 1
+        fi
+    fi
+}
+
+# List of required packages
+PACKAGES=(
+    "python3"
+    "python3-pip"
+    "python3-venv"
+    "python3-dev"
+    "clamav"
+    "clamav-daemon"
+    "clamav-freshclam"
+    "libreoffice"
+    "libreoffice-writer"
+    "libreoffice-calc"
+    "libreoffice-impress"
+    "imagemagick"
+    "udev"
+    "udisks2"
+    "libmagic1"
+    "libmagic-dev"
+    "samba-common"
+    "cifs-utils"
+    "dbus-x11"
+    "build-essential"
+)
+
+# Check all packages first
+echo "Checking system packages..."
+PACKAGES_TO_INSTALL=()
+for package in "${PACKAGES[@]}"; do
+    if ! check_package "$package"; then
+        PACKAGES_TO_INSTALL+=("$package")
+    fi
+done
+
+echo ""
+if [ ${#PACKAGES_TO_INSTALL[@]} -eq 0 ]; then
+    echo "All required packages are already installed!"
+else
+    echo "Installing ${#PACKAGES_TO_INSTALL[@]} missing package(s)..."
+    echo ""
+    for package in "${PACKAGES_TO_INSTALL[@]}"; do
+        install_if_needed "$package"
+    done
+fi
+
+echo ""
+echo "Package installation complete!"
+echo ""
 
 # Stop ClamAV services for configuration
 echo "[3/10] Configuring ClamAV..."

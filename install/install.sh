@@ -4,28 +4,107 @@
 
 set -e
 
+# Enable logging
+LOG_FILE="/var/log/usb-defender-install.log"
+mkdir -p "$(dirname "$LOG_FILE")"
+exec 1> >(tee -a "$LOG_FILE")
+exec 2>&1
+
 echo "=========================================="
 echo "USB Defender Kiosk - Installation"
 echo "=========================================="
+echo "Installation started: $(date)"
 echo ""
 echo "This script will install and configure the USB Defender Kiosk system."
 echo "It will:"
-echo "  1. Install system dependencies"
-echo "  2. Configure USB security (read-only, no autorun)"
-echo "  3. Set up ClamAV antivirus"
-echo "  4. Create kiosk user account"
-echo "  5. Install Python application"
-echo "  6. Configure kiosk mode"
-echo "  7. Set up systemd services"
+echo "  1. Run pre-flight system checks"
+echo "  2. Install system dependencies"
+echo "  3. Configure USB security (read-only, no autorun)"
+echo "  4. Set up ClamAV antivirus"
+echo "  5. Create kiosk user account"
+echo "  6. Install Python application"
+echo "  7. Configure kiosk mode"
+echo "  8. Set up systemd services"
 echo ""
 echo "WARNING: This will modify system security settings."
 echo "Only run this on a dedicated kiosk system."
 echo ""
+echo "Log file: $LOG_FILE"
+echo ""
+
+# Parse command line arguments
+ASSUME_YES=false
+SKIP_PREFLIGHT=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -y|--yes|--assume-yes)
+            ASSUME_YES=true
+            shift
+            ;;
+        --skip-preflight)
+            SKIP_PREFLIGHT=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [-y|--yes] [--skip-preflight]"
+            exit 1
+            ;;
+    esac
+done
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then
-    echo "ERROR: This script must be run as root (use sudo)"
+    echo "ERROR: This script requires root privileges."
+    echo "Please run: sudo $0"
     exit 1
+fi
+
+# Cleanup function for error handling
+cleanup_on_error() {
+    echo ""
+    echo "=========================================="
+    echo "Installation Failed!"
+    echo "=========================================="
+    echo "An error occurred during installation."
+    echo "Check the log file for details: $LOG_FILE"
+    echo ""
+    echo "To retry installation:"
+    echo "  sudo $0"
+    echo ""
+    exit 1
+}
+
+trap cleanup_on_error ERR
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(dirname "$SCRIPT_DIR")"
+INSTALL_DIR="/opt/usb-defender-kiosk"
+
+# Run pre-flight checks
+if [ "$SKIP_PREFLIGHT" = false ]; then
+    echo "=========================================="
+    echo "Step 0: Pre-flight System Checks"
+    echo "=========================================="
+    echo ""
+    
+    # Make preflight script executable
+    chmod +x "$SCRIPT_DIR/preflight_check.sh" 2>/dev/null || true
+    
+    if [ -f "$SCRIPT_DIR/preflight_check.sh" ]; then
+        if ! "$SCRIPT_DIR/preflight_check.sh"; then
+            echo ""
+            echo "Pre-flight checks failed. Installation cannot continue."
+            echo "Please resolve the issues above and try again."
+            exit 1
+        fi
+    else
+        echo "WARNING: Pre-flight check script not found."
+        echo "Continuing without system validation..."
+    fi
+    echo ""
 fi
 
 # Check Ubuntu version
@@ -34,10 +113,15 @@ if [ -f /etc/os-release ]; then
     if [ "$ID" != "ubuntu" ]; then
         echo "WARNING: This script is designed for Ubuntu Desktop."
         echo "Current OS: $ID $VERSION_ID"
-        read -p "Continue anyway? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
+        
+        if [ "$ASSUME_YES" = false ]; then
+            read -t 30 -p "Continue anyway? (y/N): " -n 1 -r || true
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                exit 1
+            fi
+        else
+            echo "Continuing in non-interactive mode..."
         fi
     fi
 else
@@ -45,27 +129,60 @@ else
     exit 1
 fi
 
-# Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="$(dirname "$SCRIPT_DIR")"
-INSTALL_DIR="/opt/usb-defender-kiosk"
-
 echo "Installation directory: $INSTALL_DIR"
 echo ""
 
-read -p "Press Enter to continue or Ctrl+C to cancel..."
+if [ "$ASSUME_YES" = false ]; then
+    read -t 30 -p "Press Enter to continue or Ctrl+C to cancel..." || echo ""
+fi
+echo ""
 
 # Copy application to /opt if not already there
 if [ "$APP_DIR" != "$INSTALL_DIR" ]; then
     echo "Copying application to $INSTALL_DIR..."
+    
+    # Backup existing installation if present
+    if [ -d "$INSTALL_DIR" ]; then
+        BACKUP_DIR="${INSTALL_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
+        echo "Backing up existing installation to $BACKUP_DIR"
+        mv "$INSTALL_DIR" "$BACKUP_DIR"
+    fi
+    
     mkdir -p /opt
     cp -r "$APP_DIR" "$INSTALL_DIR"
+    
+    if [ ! -d "$INSTALL_DIR" ]; then
+        echo "ERROR: Failed to copy application to $INSTALL_DIR"
+        exit 1
+    fi
+    
+    cd "$INSTALL_DIR"
+else
     cd "$INSTALL_DIR"
 fi
+
+# Verify required scripts exist
+echo "Verifying installation scripts..."
+REQUIRED_SCRIPTS=(
+    "$INSTALL_DIR/install/system_setup.sh"
+    "$INSTALL_DIR/install/kiosk_mode.sh"
+)
+
+for script in "${REQUIRED_SCRIPTS[@]}"; do
+    if [ ! -f "$script" ]; then
+        echo "ERROR: Required script not found: $script"
+        exit 1
+    fi
+    echo "  ✓ Found: $(basename $script)"
+done
 
 # Make scripts executable
 chmod +x "$INSTALL_DIR/install/system_setup.sh"
 chmod +x "$INSTALL_DIR/install/kiosk_mode.sh"
+chmod +x "$INSTALL_DIR/install/preflight_check.sh" 2>/dev/null || true
+
+echo "Scripts verified successfully"
+echo ""
 
 # Run system hardening
 echo ""
@@ -142,6 +259,7 @@ echo ""
 echo "=========================================="
 echo "Installation Complete!"
 echo "=========================================="
+echo "Installation finished: $(date)"
 echo ""
 echo "Summary:"
 echo "--------"
@@ -149,24 +267,43 @@ echo "Installation directory: $INSTALL_DIR"
 echo "Configuration file: /etc/usb-defender/app_config.yaml"
 echo "Log directory: /var/log/usb-defender/"
 echo "Transfer directory: /var/usb-defender/transfers/"
+echo "Installation log: $LOG_FILE"
 echo ""
 echo "Kiosk User: usb-kiosk"
-echo "Default password: usb-defender-2024"
 echo ""
-echo "IMPORTANT: Change the default password!"
-echo "  sudo passwd usb-kiosk"
+echo "⚠ SECURITY NOTICE:"
+echo "  A default password has been set for the kiosk user."
+echo "  You MUST change it before deploying this system!"
 echo ""
-echo "Next Steps:"
-echo "1. Edit configuration: sudo nano /etc/usb-defender/app_config.yaml"
-echo "2. Change kiosk user password: sudo passwd usb-kiosk"
-echo "3. Change admin dashboard password in config file"
-echo "4. Reboot the system: sudo reboot"
+echo "Required Security Steps:"
+echo "------------------------"
+echo "1. Change kiosk user password:"
+echo "   sudo passwd usb-kiosk"
 echo ""
-echo "After reboot:"
+echo "2. Update admin dashboard credentials:"
+echo "   sudo nano /etc/usb-defender/app_config.yaml"
+echo "   (Edit the 'admin_password' field)"
+echo ""
+echo "3. Review and customize configuration:"
+echo "   sudo nano /etc/usb-defender/app_config.yaml"
+echo ""
+echo "4. Reboot the system:"
+echo "   sudo reboot"
+echo ""
+echo "After Reboot:"
+echo "-------------"
 echo "- System will auto-login as usb-kiosk"
 echo "- USB Defender will start automatically in full-screen"
 echo "- Press Ctrl+Shift+D to access admin dashboard"
 echo ""
-echo "For manual start (testing): $INSTALL_DIR/venv/bin/python $INSTALL_DIR/src/main.py"
+echo "Manual Testing (before reboot):"
+echo "-------------------------------"
+echo "$INSTALL_DIR/venv/bin/python $INSTALL_DIR/src/main.py"
+echo ""
+echo "Documentation:"
+echo "--------------"
+echo "- Quick Start: $INSTALL_DIR/QUICKSTART.md"
+echo "- Air-gapped Mode: $INSTALL_DIR/AIRGAPPED_MODE.md"
+echo "- Development: $INSTALL_DIR/DEVELOPMENT.md"
 echo ""
 
